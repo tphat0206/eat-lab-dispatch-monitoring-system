@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  yolo-classifier-api-cpu:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app/
+    restart: unless-stopped # Keep the service running unless manually stopped or an error occurs
+    # environment:
+    #   - SOME_ENV_VAR=some_value # Add any environment variables if needed
