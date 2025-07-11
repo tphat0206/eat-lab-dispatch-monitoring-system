@@ -99,12 +99,11 @@ class VideoProcessor:
                     print(
                         f"Error: Could not open video writer for path: {full_save_path}. Output video will not be saved.")
                     save_output_video = False  # Disable saving if writer can't be opened
-                else:
-                    saved_video_path = full_save_path
 
             frame_number = 0
             start_time = time.time()
-
+            prev_detections = []
+            prev_labels = []
             while True:
                 ret, frame_bgr = cap.read()
                 if not ret:
@@ -114,9 +113,13 @@ class VideoProcessor:
                 print(f"Processing frame {frame_number}...")
 
                 frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-                detections = models['detector'](frame_rgb, size=(1600, 3000))
+                if frame_number % 10 != 0:
+                    sv_detections = prev_detections
+                else:
+                    detections = models['detector'](frame_rgb, size=(1600, 3000))
+                    sv_detections = sv.Detections.from_yolov5(detections)
+                    prev_detections = sv_detections
 
-                sv_detections = sv.Detections.from_yolov5(detections)
                 for i in range(len(sv_detections)):
                     x1, y1, x2, y2 = sv_detections.xyxy[i]
                     conf = sv_detections.confidence[i]
@@ -125,24 +128,30 @@ class VideoProcessor:
                     # Get the label for the detected object
                     detection_class_name = models['detector'].names[int(class_id)]
 
-                    # Crop the detected object
-                    cropped_object = frame_bgr[int(y1):int(y2), int(x1):int(x2)]
-                    cv_cropped_object = cv2.cvtColor(cropped_object, cv2.COLOR_RGB2BGR)
+                    if frame_number % 5 != 0:
+                        label = prev_labels[i]
+                    else:
+                        if i == 0:
+                            prev_labels = []
+                        # Crop the detected object
+                        cropped_object = frame_bgr[int(y1):int(y2), int(x1):int(x2)]
+                        cv_cropped_object = cv2.cvtColor(cropped_object, cv2.COLOR_RGB2BGR)
 
-                    # Classify the cropped object
-                    classifier_transform = transforms.Compose([
-                        transforms.ToPILImage(),
-                        transforms.Resize((224, 224)),
-                        transforms.ToTensor(),
-                        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                    ])
+                        # Classify the cropped object
+                        classifier_transform = transforms.Compose([
+                            transforms.ToPILImage(),
+                            transforms.Resize((224, 224)),
+                            transforms.ToTensor(),
+                            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                        ])
 
-                    # Get the top class and its confidence
-                    top_class_name = classify_cropped_object(cv_cropped_object, classifier_transform,
-                                                             detection_class_name, models)
+                        # Get the top class and its confidence
+                        top_class_name = classify_cropped_object(cv_cropped_object, classifier_transform,
+                                                                 detection_class_name, models)
 
-                    # Prepare the label for drawing
-                    label = f'{detection_class_name}-{top_class_name}'
+                        # Prepare the label for drawing
+                        label = f'{detection_class_name}-{top_class_name}'
+                        prev_labels.append(label)
 
                     # Draw bounding box and label on the image
                     cv2.rectangle(frame_bgr, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
