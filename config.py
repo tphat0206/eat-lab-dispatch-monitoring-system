@@ -1,9 +1,5 @@
 import os
 
-# --- Model Paths ---
-YOLOV5_DETECTION_MODEL_PATH = 'yolov5_model.pt'
-CLASSIFIER_MODEL_PATH = 'classification_model.pth'
-
 # --- Detection Configuration ---
 CONF_THRESHOLD = 0.15
 IOU_THRESHOLD = 0.45

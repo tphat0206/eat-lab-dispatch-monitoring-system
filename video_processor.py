@@ -10,9 +10,9 @@ from fastapi import HTTPException
 from torchvision import transforms
 
 from config import (
-    VIDEO_SAVE_DIRECTORY
+    VIDEO_SAVE_DIRECTORY, CLASSIFIER_INPUT_SIZE, CLASSIFIER_NORM_MEAN, CLASSIFIER_NORM_STD
 )
-from helper import classify_cropped_object
+from helpers import classify_cropped_object
 
 
 class VideoProcessor:
@@ -140,9 +140,9 @@ class VideoProcessor:
                         # Classify the cropped object
                         classifier_transform = transforms.Compose([
                             transforms.ToPILImage(),
-                            transforms.Resize((224, 224)),
+                            transforms.Resize((CLASSIFIER_INPUT_SIZE, CLASSIFIER_INPUT_SIZE)),
                             transforms.ToTensor(),
-                            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                            transforms.Normalize(mean=CLASSIFIER_NORM_MEAN, std=CLASSIFIER_NORM_STD)
                         ])
 
                         # Get the top class and its confidence

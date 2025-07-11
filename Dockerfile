@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 # Copy the application code and model weights
-COPY . .
+COPY . /app
 
 # Expose the port FastAPI will run on (commonly 8000)
 EXPOSE 8000

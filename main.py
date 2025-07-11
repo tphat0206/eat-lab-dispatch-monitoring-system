@@ -15,8 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from torchvision import transforms
 
-from config import IMAGE_SAVE_DIRECTORY
-from helper import classify_cropped_object
+from config import CLASSIFIER_INPUT_SIZE, CLASSIFIER_NORM_MEAN, CLASSIFIER_NORM_STD
+from helpers import classify_cropped_object
 from video_processor import VideoProcessor
 
 file_dir = os.path.dirname(os.path.realpath(__file__))
@@ -47,12 +47,12 @@ async def lifespan(app: FastAPI):
     models.clear()
     processor.clear()
 
-CLASSIFIER_CLASSES = ['empty', 'kakigori', 'not_empty']
+
 classifier_transform = transforms.Compose([
     transforms.ToPILImage(),
-    transforms.Resize((224, 224)),
+    transforms.Resize((CLASSIFIER_INPUT_SIZE, CLASSIFIER_INPUT_SIZE)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=CLASSIFIER_NORM_MEAN, std=CLASSIFIER_NORM_STD)
 ])
 
 
@@ -76,6 +76,7 @@ def get_application() -> FastAPI:
 
 
 application = get_application()
+
 
 @application.get("/", summary="Health Check")
 async def read_root():
@@ -199,9 +200,9 @@ async def predict_video(file: UploadFile = File(...)):
                 # Classify the cropped object
                 classifier_transform = transforms.Compose([
                     transforms.ToPILImage(),
-                    transforms.Resize((224, 224)),
+                    transforms.Resize((CLASSIFIER_INPUT_SIZE, CLASSIFIER_INPUT_SIZE)),
                     transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                    transforms.Normalize(mean=CLASSIFIER_NORM_MEAN, std=CLASSIFIER_NORM_STD)
                 ])
 
                 # Get the top class and its confidence
